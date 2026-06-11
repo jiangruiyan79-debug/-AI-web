@@ -8,13 +8,16 @@
     "start": "next start"
   },
   "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.1",
     "@tailwindcss/postcss": "^4.3.0",
+    "bcryptjs": "^3.0.3",
     "next": "^14.2.35",
     "openai": "^6.42.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

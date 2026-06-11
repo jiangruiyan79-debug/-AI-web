@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type UserData = {
   departure?: string;
@@ -10,8 +11,6 @@ type UserData = {
   modes?: string;
   driving?: string;
 };
-
-const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 function getBingImageUrl(query: string) {
   return `https://tse1.mm.bing.net/th?q=${encodeURIComponent(query)}&w=400&h=220&c=7`;
@@ -34,8 +33,6 @@ function ItineraryCard({ dayInfo, destination }: any) {
 
         {open && (
           <div className="px-4 pb-4 space-y-3 text-gray-700 text-sm">
-
-            {/* 景点图片 */}
             {destination && (
               <img
                 src={getBingImageUrl(`${destination} 景点 Day${dayInfo.day}`)}
@@ -46,16 +43,12 @@ function ItineraryCard({ dayInfo, destination }: any) {
                 }}
               />
             )}
-
-            {/* 行程路线 */}
             {dayInfo.place && (
               <div>
                 <p className="font-semibold mb-1">📍 行程路线</p>
                 <p className="text-gray-600">{dayInfo.place}</p>
               </div>
             )}
-
-            {/* 餐饮 */}
             {dayInfo.meals && (
               <div>
                 <p className="font-semibold mb-1">🍽️ 餐饮推荐</p>
@@ -64,23 +57,18 @@ function ItineraryCard({ dayInfo, destination }: any) {
                 {dayInfo.meals.dinner && <p>晚：{dayInfo.meals.dinner}</p>}
               </div>
             )}
-
-            {/* 穿搭 */}
             {dayInfo.outfit && (
               <div>
                 <p className="font-semibold mb-1">👗 穿搭建议</p>
                 <p>{dayInfo.outfit}</p>
               </div>
             )}
-
-            {/* 拍照 */}
             {dayInfo.photo && (
               <div>
                 <p className="font-semibold mb-1">📸 拍照打卡</p>
                 <p>{dayInfo.photo}</p>
               </div>
             )}
-
           </div>
         )}
       </div>
@@ -89,11 +77,19 @@ function ItineraryCard({ dayInfo, destination }: any) {
 }
 
 export default function ChatPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (!user) {
+      router.push("/login");
+    }
+  }, []);
+
   const [messages, setMessages] = useState([
     {
       role: "ai",
-      content:
-        "您好👋 我是智行AI旅行规划师。\n\n首先请告诉我：📍 您从哪里出发？",
+      content: "您好👋 我是智行AI旅行规划师。\n\n首先请告诉我：📍 您从哪里出发？",
     },
   ]);
 
@@ -107,10 +103,10 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  if (scrollRef.current) {
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }
-}, [messages, finalRoute, loadingRoute]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, finalRoute, loadingRoute]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -205,15 +201,14 @@ export default function ChatPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-4xl mx-auto h-screen flex flex-col">
-
         <div className="bg-blue-600 text-white p-5 text-2xl font-bold">
           智行AI旅行规划师
         </div>
 
-        <div 
-  className="h-[70vh] overflow-y-auto p-6 space-y-4 border-b border-gray-100"
-  ref={scrollRef}
->
+        <div
+          className="h-[70vh] overflow-y-auto p-6 space-y-4 border-b border-gray-100"
+          ref={scrollRef}
+        >
           {messages.map((msg, idx) => (
             <div
               key={idx}
@@ -235,7 +230,6 @@ export default function ChatPage() {
                 <p className="text-red-500">{routeError}</p>
               ) : finalRoute ? (
                 <>
-                  {/* 目的地封面图 */}
                   {finalRoute.destination && (
                     <img
                       src={getBingImageUrl(finalRoute.destination)}
@@ -246,8 +240,6 @@ export default function ChatPage() {
                       }}
                     />
                   )}
-
-                  {/* 交通 */}
                   <h3 className="font-bold text-lg mb-3">🚄 出发交通推荐</h3>
                   {finalRoute.transport && (
                     <div className="bg-white p-4 rounded-xl mb-4 shadow text-sm space-y-1">
@@ -264,20 +256,11 @@ export default function ChatPage() {
                           <p><strong>到达：</strong>{finalRoute.transport.arrive}</p>
                           <p><strong>费用：</strong>{finalRoute.transport.cost}</p>
                         </>
-                      ) : finalRoute.transport.flight ? (
-                        <>
-                          <p><strong>航班：</strong>{finalRoute.transport.flight}</p>
-                          <p><strong>起飞：</strong>{finalRoute.transport.depart}</p>
-                          <p><strong>到达：</strong>{finalRoute.transport.arrive}</p>
-                          <p><strong>费用：</strong>{finalRoute.transport.cost}</p>
-                        </>
                       ) : (
                         <p>暂无交通方案</p>
                       )}
                     </div>
                   )}
-
-                  {/* 酒店 */}
                   <h3 className="font-bold text-lg mb-3">🏨 酒店推荐</h3>
                   {finalRoute.hotel && (
                     <div className="bg-white p-4 rounded-xl mb-4 shadow text-sm space-y-1">
@@ -285,8 +268,6 @@ export default function ChatPage() {
                       <p><strong>价格：</strong>{finalRoute.hotel.price}</p>
                     </div>
                   )}
-
-                  {/* 每日行程 */}
                   <h3 className="font-bold text-lg mb-3">🗓 每日行程</h3>
                   <div className="relative border-l-2 border-blue-100 ml-1 pl-2">
                     {finalRoute.itinerary?.map((day: any) => (
@@ -320,7 +301,6 @@ export default function ChatPage() {
             发送
           </button>
         </div>
-
       </div>
     </main>
   );
