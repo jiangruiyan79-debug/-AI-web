@@ -9,8 +9,11 @@
   },
   "dependencies": {
     "@cloudbase/node-sdk": "^3.18.1",
+    "@headlessui/react": "^2.2.10",
     "@tailwindcss/postcss": "^4.3.0",
     "bcryptjs": "^3.0.3",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.17.0",
     "next": "^14.2.35",
     "openai": "^6.42.0",
     "react": "^18.2.0",
