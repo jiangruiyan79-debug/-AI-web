@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { saveRoute } from "@/app/lib/storage";
 
 type UserData = {
   departure?: string;
@@ -151,43 +152,78 @@ export default function ChatPage() {
           content: "最后一个问题：本次旅行是否自驾？\n请输入：是 或 否",
         });
         break;
-      case 5:
-        const finalData = { ...userData, driving: input };
-        setUserData(finalData);
-        setLoadingRoute(true);
-        setRouteError(null);
+case 5:
+  const finalData = { ...userData, driving: input };
 
-        newMessages.push({
+  setUserData(finalData);
+  setLoadingRoute(true);
+  setRouteError(null);
+
+  newMessages.push({
+    role: "ai",
+    content: "正在分析用户偏好、交通、预算等...",
+  });
+
+  setMessages(newMessages);
+  setStep(step + 1);
+  setInput("");
+
+  try {
+    const res = await fetch("/api/planner", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(finalData),
+    });
+
+    const data = await res.json();
+
+    if (data) {
+      const routeData = {
+        ...data,
+
+        departure: finalData.departure,
+
+        days: finalData.days,
+        budget: finalData.budget,
+        modes: finalData.modes,
+        driving: finalData.driving,
+
+        createTime: new Date().toISOString(),
+      };
+
+      setFinalRoute(routeData);
+
+      saveRoute(routeData);
+
+      setMessages((prev) => [
+        ...prev,
+        {
           role: "ai",
-          content: "正在分析用户偏好、交通、预算等...",
-        });
-        setMessages(newMessages);
-        setStep(step + 1);
-        setInput("");
+          content: "✅ 已生成完整路线并保存到个人中心！",
+        },
+      ]);
+    } else {
+      setRouteError("生成路线失败，请稍后重试。");
+    }
+  } catch (err) {
+    console.error(err);
 
-        try {
-          const res = await fetch("/api/planner", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(finalData),
-          });
-          const data = await res.json();
-          setFinalRoute(data);
-          setMessages((prev) => [
-            ...prev,
-            { role: "ai", content: "✅ 已生成完整路线，请查看下方每日安排！" },
-          ]);
-        } catch (err) {
-          console.error(err);
-          setRouteError("生成路线失败，请稍后重试。");
-          setMessages((prev) => [
-            ...prev,
-            { role: "ai", content: "生成路线失败，请稍后重试。" },
-          ]);
-        } finally {
-          setLoadingRoute(false);
-        }
-        return;
+    setRouteError("生成路线失败，请稍后重试。");
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        content: "生成路线失败，请稍后重试。",
+      },
+    ]);
+  } finally {
+    setLoadingRoute(false);
+  }
+
+  return;
 
       default:
         break;
@@ -226,82 +262,128 @@ export default function ChatPage() {
             <div className="bg-green-50 p-6 rounded-2xl mt-4">
               {loadingRoute ? (
                 <p className="animate-pulse text-gray-500">正在生成路线，请稍等...</p>
-              ) : routeError ? (
-                <p className="text-red-500">{routeError}</p>
-              ) : finalRoute ? (
-                <>
-                  {finalRoute.destination && (
-                    <img
-                      src={getBingImageUrl(finalRoute.destination)}
-                      alt={finalRoute.destination}
-                      className="w-full h-48 object-cover rounded-xl mb-4"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  )}
-                  <h3 className="font-bold text-lg mb-3">🚄 出发交通推荐</h3>
-                  {finalRoute.transport && (
-                    <div className="bg-white p-4 rounded-xl mb-4 shadow text-sm space-y-1">
-                      {finalRoute.transport.type === "自驾" ? (
-                        <>
-                          <p><strong>方式：</strong>自驾</p>
-                          <p><strong>耗时：</strong>{finalRoute.transport.time}</p>
-                          <p><strong>费用：</strong>{finalRoute.transport.cost}</p>
-                        </>
-                      ) : finalRoute.transport.train ? (
-                        <>
-                          <p><strong>车次：</strong>{finalRoute.transport.train}</p>
-                          <p><strong>发车：</strong>{finalRoute.transport.depart}</p>
-                          <p><strong>到达：</strong>{finalRoute.transport.arrive}</p>
-                          <p><strong>费用：</strong>{finalRoute.transport.cost}</p>
-                        </>
-                      ) : (
-                        <p>暂无交通方案</p>
-                      )}
-                    </div>
-                  )}
-                  <h3 className="font-bold text-lg mb-3">🏨 酒店推荐</h3>
-                  {finalRoute.hotel && (
-                    <div className="bg-white p-4 rounded-xl mb-4 shadow text-sm space-y-1">
-                      <p><strong>名称：</strong>{finalRoute.hotel.name}</p>
-                      <p><strong>价格：</strong>{finalRoute.hotel.price}</p>
-                    </div>
-                  )}
-                  <h3 className="font-bold text-lg mb-3">🗓 每日行程</h3>
-                  <div className="relative border-l-2 border-blue-100 ml-1 pl-2">
-                    {finalRoute.itinerary?.map((day: any) => (
-                      <ItineraryCard
-                        key={day.day}
-                        dayInfo={day}
-                        destination={finalRoute.destination || userData.destination}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          )}
-        </div>
+              ) : routeError ?
+              (
+  <p className="text-red-500">{routeError}</p>
+) : finalRoute ? (
+  <>
+    {finalRoute.destination && (
+      <img
+        src={getBingImageUrl(finalRoute.destination)}
+        alt={finalRoute.destination}
+        className="w-full h-48 object-cover rounded-xl mb-4"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = "none";
+        }}
+      />
+    )}
 
-        <div className="p-4 bg-white border-t flex gap-3">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="请输入..."
-            className="flex-1 border rounded-xl px-4 py-3"
-            onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
-            disabled={loadingRoute}
-          />
-          <button
-            onClick={handleSend}
-            disabled={loadingRoute}
-            className="bg-blue-600 text-white px-6 rounded-xl disabled:opacity-50"
-          >
-            发送
-          </button>
-        </div>
+    <h3 className="font-bold text-lg mb-3">
+      🚄 出发交通推荐
+    </h3>
+
+    {finalRoute.transport && (
+      <div className="bg-white p-4 rounded-xl mb-4 shadow text-sm space-y-1">
+        {finalRoute.transport.type === "自驾" ? (
+          <>
+            <p>
+              <strong>方式：</strong>
+              自驾
+            </p>
+            <p>
+              <strong>耗时：</strong>
+              {finalRoute.transport.time}
+            </p>
+            <p>
+              <strong>费用：</strong>
+              {finalRoute.transport.cost}
+            </p>
+          </>
+        ) : finalRoute.transport.train ? (
+          <>
+            <p>
+              <strong>车次：</strong>
+              {finalRoute.transport.train}
+            </p>
+            <p>
+              <strong>发车：</strong>
+              {finalRoute.transport.depart}
+            </p>
+            <p>
+              <strong>到达：</strong>
+              {finalRoute.transport.arrive}
+            </p>
+            <p>
+              <strong>费用：</strong>
+              {finalRoute.transport.cost}
+            </p>
+          </>
+        ) : (
+          <p>暂无交通方案</p>
+        )}
       </div>
-    </main>
-  );
+    )}
+
+    <h3 className="font-bold text-lg mb-3">
+      🏨 酒店推荐
+    </h3>
+
+    {finalRoute.hotel && (
+      <div className="bg-white p-4 rounded-xl mb-4 shadow text-sm space-y-1">
+        <p>
+          <strong>名称：</strong>
+          {finalRoute.hotel.name}
+        </p>
+        <p>
+          <strong>价格：</strong>
+          {finalRoute.hotel.price}
+        </p>
+      </div>
+    )}
+
+    <h3 className="font-bold text-lg mb-3">
+      🗓 每日行程
+    </h3>
+
+    <div className="relative border-l-2 border-blue-100 ml-1 pl-2">
+      {finalRoute.itinerary?.map((day: any) => (
+        <ItineraryCard
+          key={day.day}
+          dayInfo={day}
+          destination={
+            finalRoute.destination ||
+            userData.destination
+          }
+        />
+      ))}
+    </div>
+  </>
+) : null}
+</div>
+)}
+</div>
+
+<div className="p-4 bg-white border-t flex gap-3">
+  <input
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    placeholder="请输入..."
+    className="flex-1 border rounded-xl px-4 py-3"
+    onKeyDown={(e) => {
+      if (e.key === "Enter") handleSend();
+    }}
+    disabled={loadingRoute}
+  />
+
+  <button
+    onClick={handleSend}
+    disabled={loadingRoute}
+    className="bg-blue-600 text-white px-6 rounded-xl disabled:opacity-50"
+  >
+    发送
+  </button>
+</div>
+</div>
+</main>
+);
 }

@@ -5,18 +5,28 @@ import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+const [user, setUser] = useState<any>(null);
+const [loading, setLoading] = useState(true);
+const [routes, setRoutes] = useState<any[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) {
-      router.push("/login");
-      return;
-    }
-    setUser(JSON.parse(stored));
-    setLoading(false);
-  }, []);
+  const stored = localStorage.getItem("user");
+
+  if (!stored) {
+    router.push("/login");
+    return;
+  }
+
+  setUser(JSON.parse(stored));
+
+  const savedRoutes = JSON.parse(
+    localStorage.getItem("savedRoutes") || "[]"
+  );
+
+  setRoutes(savedRoutes);
+
+  setLoading(false);
+}, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -92,15 +102,82 @@ export default function DashboardPage() {
             <p className="font-medium text-green-600">✅ 正常</p>
           </div>
         </div>
+<div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100">
 
-        <div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100 text-center">
-          <p className="text-gray-500 mb-4">还没有生成过路线，快去试试吧！</p>
-          <Link href="/chat">
-            <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow">
-              🗺️ 生成新路线
+  <h2 className="text-xl font-bold mb-6">
+    🗺️ 我的旅行路线
+  </h2>
+  {routes.length === 0 ? (
+    <div className="text-center">
+      <p className="text-gray-500 mb-4">
+        还没有生成过路线，快去试试吧！
+      </p>
+
+      <Link href="/chat">
+        <button className="bg-blue-600 text-white px-6 py-3 rounded-xl">
+          生成新路线
+        </button>
+      </Link>
+    </div>
+  ) : (
+    <div className="space-y-4">
+      {routes.map((route, index) => (
+        <div
+          key={index}
+          className="border rounded-xl p-5 hover:shadow-md transition"
+        >
+          <div className="flex justify-between items-center">
+
+            <div>
+            <h3 className="font-bold text-lg text-gray-900">
+  📍 {route.departure} → {route.destination}
+</h3>
+
+<div className="flex flex-wrap gap-3 mt-3 text-sm">
+  <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full">
+    🗓️ {route.days}天{Number(route.days) - 1}晚
+  </span>
+
+  <span className="bg-green-50 text-green-600 px-3 py-1 rounded-full">
+    💰 {route.budget}
+  </span>
+
+  <span className="bg-purple-50 text-purple-600 px-3 py-1 rounded-full">
+    ⭐ AI路线
+  </span>
+</div>
+
+<p className="text-xs text-gray-400 mt-3">
+  创建时间：
+  {new Date(route.createTime).toLocaleDateString()}
+</p>
+            </div>
+
+            <button
+              onClick={() => {
+                const updated = routes.filter(
+                  (_, i) => i !== index
+                );
+
+                localStorage.setItem(
+                  "savedRoutes",
+                  JSON.stringify(updated)
+                );
+
+                setRoutes(updated);
+              }}
+              className="text-red-500"
+            >
+              删除
             </button>
-          </Link>
+
+          </div>
         </div>
+      ))}
+    </div>
+  )}
+</div>
+        
       </div>
     </main>
   );

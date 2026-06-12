@@ -10,13 +10,36 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { departure, destination, days, budget, modes, driving } = body;
+let finalDestination = destination;
 
+if (
+  destination.includes("随机") ||
+  destination.includes("推荐")
+) {
+  const randomCities = [
+    "长沙",
+    "重庆",
+    "成都",
+    "厦门",
+    "珠海",
+    "桂林",
+    "大理",
+    "青岛",
+    "苏州",
+    "西安"
+  ];
+
+  finalDestination =
+    randomCities[
+      Math.floor(Math.random() * randomCities.length)
+    ];
+}
     const prompt = `
 你是智行AI旅游规划师。
 
 用户信息：
 出发地：${departure}
-目的地：${destination}
+目的地：${finalDestination}
 旅行天数：${days}
 预算：${budget}
 偏好模式：${modes}
@@ -27,7 +50,7 @@ export async function POST(req: Request) {
 必须返回如下JSON格式，只返回JSON，不要解释，不要Markdown：
 
 {
-  "destination": "${destination}",
+  "destination": "${finalDestination}",
   "transport": {
     "train": "车次号",
     "depart": "出发时间",

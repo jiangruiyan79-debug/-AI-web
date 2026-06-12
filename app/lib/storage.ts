@@ -1,37 +1,26 @@
-export interface SavedRoute {
-  id: string
-  title: string
-  destination: string
-  createdAt: string
-  data: any
-}
+export const STORAGE_KEY = "savedRoutes";
 
-export function saveRoute(route: SavedRoute) {
-  const routes = getRoutes()
-
-  routes.unshift(route)
-
-  localStorage.setItem(
-    "zhixing_routes",
-    JSON.stringify(routes)
-  )
+export function saveRoute(route: any) {
+  const routes = getRoutes();
+  routes.push({
+    ...route,
+    createTime: new Date().toISOString(),
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(routes));
 }
 
 export function getRoutes() {
-  const routes = localStorage.getItem(
-    "zhixing_routes"
-  )
-
-  return routes ? JSON.parse(routes) : []
+  if (typeof window === "undefined") return [];
+  const data = localStorage.getItem(STORAGE_KEY);
+  return data ? JSON.parse(data) : [];
 }
 
-export function deleteRoute(id: string) {
-  const routes = getRoutes().filter(
-    (r: SavedRoute) => r.id !== id
-  )
+export function clearRoutes() {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
-  localStorage.setItem(
-    "zhixing_routes",
-    JSON.stringify(routes)
-  )
+export function deleteRoute(index: number) {
+  const routes = getRoutes();
+  routes.splice(index, 1);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(routes));
 }
