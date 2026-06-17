@@ -6,6 +6,7 @@ const app = cloudbase.init({
   secretId: process.env.CLOUDBASE_SECRET_ID || "",
   secretKey: process.env.CLOUDBASE_SECRET_KEY || "",
   token: process.env.CLOUDBASE_API_KEY!,
+  region: "ap-shanghai",
 });
 
 export async function POST(req: Request) {
